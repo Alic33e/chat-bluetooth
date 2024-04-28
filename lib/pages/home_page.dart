@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:myapp2/controllers/bluetooth_controller.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
+import 'package:myapp2/pages/device_screen.dart';
 
 class HomePage extends StatefulWidget {
  @override
@@ -8,26 +8,41 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
- BluetoothController bluetoothController = BluetoothController();
+ BluetoothAdapterState _adapterState = BluetoothAdapterState.unknown;
+ List<ScanResult> _scanResults = [];
+ bool _isScanning = false; // Nuevo estado para controlar el escaneo
 
  @override
  void initState() {
     super.initState();
-    bluetoothController.getDevices();
+    FlutterBluePlus.adapterState.listen((state) {
+      setState(() {
+        _adapterState = state;
+      });
+    });
  }
 
- Future<void> connectToDevice(BluetoothDevice device) async {
-    try {
-      await device.connect(); // Utiliza el método correcto para conectar
-      // Aquí puedes manejar la conexión exitosa, por ejemplo, mostrando un Snackbar
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Conectado a ${device.name}')),
-      );
-    } catch (e) {
-      // Manejar errores de conexión
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error al conectar: $e')),
-      );
+ Future<void> _startScan() async {
+    if (!_isScanning) {
+      setState(() {
+        _isScanning = true;
+      });
+      _scanResults = [];
+      await FlutterBluePlus.startScan(timeout: Duration(seconds: 10));
+      FlutterBluePlus.scanResults.listen((results) {
+        setState(() {
+          _scanResults = results;
+        });
+      });
+    }
+ }
+
+ Future<void> _stopScan() async {
+    if (_isScanning) {
+      setState(() {
+        _isScanning = false;
+      });
+      await FlutterBluePlus.stopScan();
     }
  }
 
@@ -35,21 +50,36 @@ class _HomePageState extends State<HomePage> {
  Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Dispositivos Bluetooth'),
+        title: Text('Bluetooth App'),
       ),
-      body: ListView.builder(
-        itemCount: bluetoothController.devicesList.length,
-        itemBuilder: (context, index) {
-          BluetoothDevice device = bluetoothController.devicesList[index];
-          return ListTile(
-            title: Text(device.name),
-            subtitle: Text(device.id.toString()),
-            trailing: IconButton(
-              icon: Icon(Icons.bluetooth_connected),
-              onPressed: () => connectToDevice(device),
+      body: Column(
+        children: <Widget>[
+          Text('Bluetooth Adapter State: $_adapterState'),
+          ElevatedButton(
+            onPressed: _isScanning ? _stopScan : _startScan,
+            child: Text(_isScanning ? 'Stop Scan' : 'Start Scan'),
+          ),
+          Expanded(
+            child: ListView.builder(
+              itemCount: _scanResults.length,
+              itemBuilder: (context, index) {
+                final result = _scanResults[index];
+                return ListTile(
+                 title: Text(result.device.name ?? 'Unknown Device'),
+                 subtitle: Text('RSSI: ${result.rssi}'),
+                 onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => DeviceScreen(device: result.device),
+                      ),
+                    );
+                 },
+                );
+              },
             ),
-          );
-        },
+          ),
+        ],
       ),
     );
  }

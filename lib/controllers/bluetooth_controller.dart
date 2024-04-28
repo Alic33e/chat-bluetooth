@@ -1,19 +1,32 @@
+import 'dart:async';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 
 class BluetoothController {
-  List<BluetoothDevice> devicesList = [];
+ StreamSubscription<BluetoothConnectionState>? _connectionStateSubscription;
 
-  Future<void> getDevices() async {
-    await FlutterBluePlus.startScan(timeout: Duration(seconds: 4));
+ Future<void> connectToDevice(BluetoothDevice device) async {
+    // Cancelar cualquier suscripción existente para evitar duplicados
+    _connectionStateSubscription?.cancel();
 
-    FlutterBluePlus.scanResults.listen((List<ScanResult> results) {
-      for (ScanResult result in results) {
-        if (!devicesList.contains(result.device)) {
-          devicesList.add(result.device);
-        }
-      }
+    // Suscribirse al estado de conexión del dispositivo
+    _connectionStateSubscription = device.connectionState.listen((state) {
+      print('Connection State: $state');
+      // Aquí puedes manejar el estado de conexión
     });
 
-    await FlutterBluePlus.stopScan();
-  }
+    // Conectar al dispositivo
+    await device.connect();
+ }
+
+ Future<void> disconnectFromDevice(BluetoothDevice device) async {
+    // Desconectar del dispositivo
+    await device.disconnect();
+
+    // Cancelar la suscripción al estado de conexión
+    _connectionStateSubscription?.cancel();
+ }
+
+ void dispose() {
+    _connectionStateSubscription?.cancel();
+ }
 }

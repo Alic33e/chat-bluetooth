@@ -7,6 +7,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  flutter_blue_plus: ^1.32.4
+  get: ^4.6.6
   cupertino_icons: ^1.0.6
 dev_dependencies:
   flutter_test:

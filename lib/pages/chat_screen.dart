@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
+import 'package:intl/intl.dart'; // Agrega esta línea para usar la librería de formato de fecha
 
 class ChatScreen extends StatefulWidget {
   final BluetoothDevice device;
@@ -11,7 +12,7 @@ class ChatScreen extends StatefulWidget {
 }
 
 class _ChatScreenState extends State<ChatScreen> {
-  final List<String> _messages = [];
+  final List<Map<String, dynamic>> _messages = []; // Cambia a una lista de mapas
   final TextEditingController _textController = TextEditingController();
 
   @override
@@ -26,22 +27,38 @@ class _ChatScreenState extends State<ChatScreen> {
             child: ListView.builder(
               itemCount: _messages.length,
               itemBuilder: (context, index) {
+                final message = _messages[index];
+                final isOwnMessage = message['sender'] == 'Tú';
                 return Padding(
                   padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
                   child: Align(
-                    alignment: _messages[index].startsWith('Tú:') ? Alignment.centerRight : Alignment.centerLeft,
-                    child: Container(
-                      padding: const EdgeInsets.all(12.0),
-                      decoration: BoxDecoration(
-                        color: _messages[index].startsWith('Tú:') ? Colors.blue : Colors.grey[300],
-                        borderRadius: BorderRadius.circular(16.0),
-                      ),
-                      child: Text(
-                        _messages[index],
-                        style: TextStyle(
-                          color: _messages[index].startsWith('Tú:') ? Colors.white : Colors.black,
+                    alignment: isOwnMessage ? Alignment.centerRight : Alignment.centerLeft,
+                    child: Column(
+                      crossAxisAlignment:
+                          isOwnMessage ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(12.0),
+                          decoration: BoxDecoration(
+                            color: isOwnMessage ? Colors.blue : Colors.grey[300],
+                            borderRadius: BorderRadius.circular(16.0),
+                          ),
+                          child: Text(
+                            message['text'],
+                            style: TextStyle(
+                              color: isOwnMessage ? Colors.white : Colors.black,
+                            ),
+                          ),
                         ),
-                      ),
+                        SizedBox(height: 4.0),
+                        Text(
+                          DateFormat('HH:mm').format(message['timestamp']),
+                          style: TextStyle(
+                            fontSize: 12.0,
+                            color: Colors.grey,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 );
@@ -70,7 +87,11 @@ class _ChatScreenState extends State<ChatScreen> {
                     if (message.isNotEmpty) {
                       sendMessageToDevice(message);
                       setState(() {
-                        _messages.add('Tú: $message');
+                        _messages.add({
+                          'text': message,
+                          'sender': 'Tú',
+                          'timestamp': DateTime.now(),
+                        });
                         _textController.clear();
                       });
                     }

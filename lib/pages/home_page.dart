@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:myapp2/pages/device_screen.dart';
+import 'package:myapp2/pages/chat_screen.dart';
 
 class HomePage extends StatefulWidget {
  @override
@@ -68,13 +69,13 @@ class _HomePageState extends State<HomePage> {
                  title: Text(result.device.name ?? 'Unknown Device'),
                  subtitle: Text('RSSI: ${result.rssi}'),
                  onTap: () {
-                    Navigator.push(
+                  Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => DeviceScreen(device: result.device),
+                        builder: (context) => ChatScreen(device: result.device),
                       ),
-                    );
-                 },
+                  );
+                  },
                 );
               },
             ),

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
-import 'package:myapp2/pages/device_screen.dart';
 import 'package:myapp2/pages/chat_screen.dart';
 
 class HomePage extends StatefulWidget {
@@ -16,7 +15,8 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
-    FlutterBluePlus.adapterState.listen((state) => setState(() => _adapterState = state));
+    FlutterBluePlus.adapterState
+        .listen((state) => setState(() => _adapterState = state));
   }
 
   Future<void> _startScan() async {
@@ -24,7 +24,8 @@ class _HomePageState extends State<HomePage> {
       setState(() => _isScanning = true);
       _scanResults = [];
       await FlutterBluePlus.startScan(timeout: const Duration(seconds: 10));
-      FlutterBluePlus.scanResults.listen((results) => setState(() => _scanResults = results));
+      FlutterBluePlus.scanResults
+          .listen((results) => setState(() => _scanResults = results));
     }
   }
 
@@ -52,11 +53,13 @@ class _HomePageState extends State<HomePage> {
               itemBuilder: (context, index) {
                 final result = _scanResults[index];
                 return ListTile(
-                  title: Text(result.device.name ?? 'Unknown Device'),
+                  title: Text(
+                      result.device.platformName.isEmpty ? 'Dispositivo desconocido' : result.device.platformName),
                   subtitle: Text('RSSI: ${result.rssi}'),
                   onTap: () => Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (_) => ChatScreen(device: result.device)),
+                    MaterialPageRoute(
+                        builder: (_) => ChatScreen(device: result.device)),
                   ),
                 );
               },

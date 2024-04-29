@@ -10,10 +10,10 @@ class DeviceScreen extends StatelessWidget {
  Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(device.name ?? 'Device Details'),
+        title: Text(device.platformName.isEmpty ? 'Dispositivo Desconocido' : device.platformName),
       ),
       body: Center(
-        child: Text('Device Name: ${device.name}'),
+        child: Text('Device Name: ${device.platformName}'),
       ),
     );
  }

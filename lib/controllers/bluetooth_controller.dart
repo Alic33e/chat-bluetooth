@@ -1,32 +1,51 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 
 class BluetoothController {
- StreamSubscription<BluetoothConnectionState>? _connectionStateSubscription;
+ BluetoothDevice? _device;
+ BluetoothCharacteristic? _selectedCharacteristic;
+ StreamSubscription<List<int>>? _valueChangedSubscription;
 
  Future<void> connectToDevice(BluetoothDevice device) async {
-    // Cancelar cualquier suscripción existente para evitar duplicados
-    _connectionStateSubscription?.cancel();
-
-    // Suscribirse al estado de conexión del dispositivo
-    _connectionStateSubscription = device.connectionState.listen((state) {
-      print('Connection State: $state');
-      // Aquí puedes manejar el estado de conexión
-    });
-
-    // Conectar al dispositivo
-    await device.connect();
+    _device = device;
+    await _device!.connect();
+    List<BluetoothService> services = await _device!.discoverServices();
+    for (BluetoothService service in services) {
+      for (BluetoothCharacteristic characteristic in service.characteristics) {
+        if (characteristic.properties.write) {
+          _selectedCharacteristic = characteristic;
+          break;
+        }
+      }
+    }
+    await startListening();
  }
 
- Future<void> disconnectFromDevice(BluetoothDevice device) async {
-    // Desconectar del dispositivo
-    await device.disconnect();
+ Future<void> startListening() async {
+    if (_selectedCharacteristic != null) {
+      _valueChangedSubscription = _selectedCharacteristic!.value.listen((data) {
+        String message = utf8.decode(data);
+        print("Mensaje recibido: $message");
+        // Aquí deberías actualizar la UI con el mensaje recibido
+        // Esto puede requerir pasar el mensaje a la UI a través de un callback o un Stream
+      });
+      await _selectedCharacteristic!.setNotifyValue(true);
+    }
+ }
 
-    // Cancelar la suscripción al estado de conexión
-    _connectionStateSubscription?.cancel();
+ Future<void> sendMessage(String message) async {
+    if (_selectedCharacteristic != null) {
+      List<int> bytes = utf8.encode(message);
+      await _selectedCharacteristic!.write(bytes, withoutResponse: false);
+      print("Mensaje enviado: $message");
+    } else {
+      print("No se seleccionó ninguna característica para enviar mensajes");
+    }
  }
 
  void dispose() {
-    _connectionStateSubscription?.cancel();
+    _valueChangedSubscription?.cancel();
+    _device?.disconnect();
  }
 }
